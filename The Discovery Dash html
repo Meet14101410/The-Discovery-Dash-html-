@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Discovery Dash</title>
+  <style>
+    :root{font-family:system-ui,Segoe UI,Roboto,Arial;}
+    body{margin:0;background:linear-gradient(180deg,#0f172a,#071033);color:#e6eef8;display:flex;align-items:center;justify-content:center;height:100vh}
+    .card{background:rgba(255,255,255,0.04);backdrop-filter:blur(6px);padding:18px;border-radius:12px;width:360px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+    h1{margin:0 0 8px;font-size:20px;text-align:center}
+    p{margin:0 0 12px;font-size:13px;text-align:center;color:#bcd3ee}
+    .arena{height:220px;background:linear-gradient(180deg,#05102a,#09213f);border-radius:8px;margin-bottom:12px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+    .item{position:absolute;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,0.06);font-size:12px;cursor:pointer;transition:transform .12s}
+    .hud{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .btn{background:#0ea5a3;border:none;padding:8px 12px;border-radius:8px;color:#022;cursor:pointer;font-weight:600}
+    .small{font-size:12px;color:#9fb7d9}
+    .score{font-size:14px;font-weight:700}
+    footer{font-size:11px;text-align:center;color:#94b3d6;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>The Discovery Dash</h1>
+    <p>Click the science items that appear — collect points before time runs out!</p>
+
+    <div class="hud">
+      <div class="score">Score: <span id="score">0</span></div>
+      <div class="small">Time: <span id="time">30</span>s</div>
+      <button id="startBtn" class="btn">Start</button>
+    </div>
+
+    <div id="arena" class="arena"></div>
+    <footer>Tap items quickly — try to discover them all!</footer>
+  </div>
+
+  <script>
+    const arena = document.getElementById('arena');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
+    const startBtn = document.getElementById('startBtn');
+
+    let score = 0;
+    let timeLeft = 30;
+    let timer = null;
+    let spawnInterval = null;
+
+    const items = ['Atom','DNA','Planet','Beaker','Leaf','Neuron','Magnet','Crystal'];
+
+    function randomInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+    function spawnItem(){
+      const el = document.createElement('div');
+      el.className = 'item';
+      const text = items[randomInt(0,items.length-1)];
+      el.textContent = text;
+      // random position inside arena
+      const pad = 12;
+      const x = randomInt(pad, arena.clientWidth - 80);
+      const y = randomInt(pad, arena.clientHeight - 30);
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.addEventListener('click', () => {
+        score += 10;
+        scoreEl.textContent = score;
+        el.style.transform = 'scale(0.85)';
+        el.remove();
+      });
+      arena.appendChild(el);
+      // auto-remove after a short time to keep arena clean
+      setTimeout(()=>el.remove(), 2500 + randomInt(0,2000));
+    }
+
+    function startGame(){
+      // reset
+      score = 0; timeLeft = 30;
+      scoreEl.textContent = score; timeEl.textContent = timeLeft;
+      startBtn.disabled = true; startBtn.textContent = 'Running...';
+
+      timer = setInterval(()=>{
+        timeLeft -= 1;
+        timeEl.textContent = timeLeft;
+        if(timeLeft <= 0){ endGame(); }
+      }, 1000);
+
+      spawnInterval = setInterval(spawnItem, 700);
+      // spawn a few immediately
+      for(let i=0;i<3;i++) spawnItem();
+    }
+
+    function endGame(){
+      clearInterval(timer); clearInterval(spawnInterval);
+      startBtn.disabled = false; startBtn.textContent = 'Start';
+      // remove remaining items
+      document.querySelectorAll('.arena .item').forEach(n=>n.remove());
+      alert('Time up! Your score: ' + score);
+    }
+
+    startBtn.addEventListener('click', startGame);
+
+    // mobile: tap anywhere on arena to get a small bonus
+    arena.addEventListener('click', (e)=>{
+      if(e.target === arena && timeLeft>0 && !startBtn.disabled){ return; }
+      // no-op
+    });
+
+    // make arena responsive when resized
+    window.addEventListener('resize', ()=>{/* nothing needed - positions are relative */});
+  </script>
+</body>
+</html>
