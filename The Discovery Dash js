@@ -1,0 +1,108 @@
+/* discovery-dash.js
+   Usage:
+   - Requires an HTML canvas with id="gameCanvas"
+   - Optional UI elements:
+       <button id="startBtn">Start</button>
+       <span id="score">0</span>
+       <span id="lives">3</span>
+       <div id="gameOver" style="display:none">Game Over</div>
+   - This file contains player, obstacles, collectibles, scoring, levels, simple physics.
+*/
+
+(() => {
+  // ----- Config -----
+  const CONFIG = {
+    width: 900,
+    height: 450,
+    gravity: 0.9,
+    groundHeight: 80,
+    playerStart: { x: 80, y: 0 },
+    initialSpeed: 4,
+    speedIncreaseInterval: 15000, // ms
+    obstacleSpawnInterval: 1400, // ms (will decrease with difficulty)
+    collectibleSpawnInterval: 2000,
+    maxLives: 3,
+    jumpVelocity: -15,
+    touchJumpThreshold: 20,
+    fpsTarget: 60,
+  };
+
+  // ----- Canvas setup -----
+  const canvas = document.getElementById('gameCanvas') || (() => {
+    // create a canvas if not present to avoid crash
+    const c = document.createElement('canvas');
+    c.id = 'gameCanvas';
+    document.body.appendChild(c);
+    return c;
+  })();
+  canvas.width = CONFIG.width;
+  canvas.height = CONFIG.height;
+  const ctx = canvas.getContext('2d');
+
+  // UI elements
+  const startBtn = document.getElementById('startBtn');
+  const scoreEl = document.getElementById('score');
+  const livesEl = document.getElementById('lives');
+  const gameOverEl = document.getElementById('gameOver');
+
+  // ----- Game state -----
+  let game = {
+    running: false,
+    speed: CONFIG.initialSpeed,
+    lastSpeedIncrease: 0,
+    lastObstacleSpawn: 0,
+    lastCollectibleSpawn: 0,
+    obstacleInterval: CONFIG.obstacleSpawnInterval,
+    collectibleInterval: CONFIG.collectibleSpawnInterval,
+    score: 0,
+    lives: CONFIG.maxLives,
+    t0: 0,
+  };
+
+  // ----- Utility -----
+  function rnd(min, max) { return Math.random() * (max - min) + min; }
+  function rectsIntersect(a, b) {
+    return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+  }
+
+  // ----- Player -----
+  class Player {
+    constructor() {
+      this.w = 48;
+      this.h = 56;
+      this.x = CONFIG.playerStart.x;
+      this.y = CONFIG.height - CONFIG.groundHeight - this.h;
+      this.vy = 0;
+      this.onGround = true;
+      this.color = '#1e88e5';
+      this.jumpCount = 0; // for double-jump (optional)
+    }
+    reset() {
+      this.x = CONFIG.playerStart.x;
+      this.y = CONFIG.height - CONFIG.groundHeight - this.h;
+      this.vy = 0;
+      this.onGround = true;
+    }
+    applyPhysics() {
+      this.vy += CONFIG.gravity * 0.9;
+      this.y += this.vy;
+      const groundY = CONFIG.height - CONFIG.groundHeight - this.h;
+      if (this.y >= groundY) {
+        this.y = groundY;
+        this.vy = 0;
+        this.onGround = true;
+        this.jumpCount = 0;
+      } else {
+        this.onGround = false;
+      }
+    }
+    jump() {
+      // allow single jump + optional double jump
+      if (this.onGround || this.jumpCount < 1) {
+        this.vy = CONFIG.jumpVelocity;
+        this.onGround = false;
+        this.jumpCount++;
+      }
+    }
+    getRect() { retur
+
